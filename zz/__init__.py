@@ -1,3 +1,5 @@
+# from comet_ml import Experiment
+# experiment = Experiment("fmngQK5ROchTbZokQQRn4QIHl", project_name="godTong")
 import torch
 from zz.gpumanageTorch import GPUManager
 from zz.torchsummary import summary,seed_everything
@@ -10,6 +12,13 @@ import time
 from torch.utils import data
 from torch import nn
 import d2l.torch as d2l
+
+
+def g(*varr):
+    gpuvar = list()
+    for i in range(len(varr)):
+        gpuvar.append(varr[i].to('cuda'))
+    return gpuvar
 def use_svg_display():
     display.set_matplotlib_formats('svg')
 
@@ -90,8 +99,10 @@ class Timer:  #@save
     def cumsum(self):
         """Return the accumulated time."""
         return np.array(self.times).cumsum().tolist()
-    def print(self):
-        print(f'{self.stop():.5f} sec')
+    def print_time(self,log=''):
+        if log == '': log = "[time used]"
+        log = f'[{log}]'
+        print(f'{log}{self.stop():.5f} sec')
 
 
 def synthetic_linear_data(w, b, num_examples): 
@@ -156,7 +167,7 @@ def draw(image_tensor, num_images=25, size=(1,28,28)):
     plt.show()
 # __all__ = 
 seed_everything()
-d = autoGpu()
+autoGpu()
 darkplt()
 
 def load_array(data_arrays, batch_size, is_train=True):  
@@ -219,10 +230,20 @@ def accuracy(y_hat, y) -> float:
 def evaluate_accuracy(net, data_iter):  
     """Compute the accuracy for a model on a dataset."""
     metric = Accumulator(2)  # No. of correct predictions, no. of predictions
+    net = net.to(device)
     for X, y in data_iter:
+        X, y = X.to(device),y.to(device)
         metric.add(accuracy(net(X), y), y.numel())
     return metric[0] / metric[1]
     
+@torch.no_grad()
+def get_accuracy(net, train_iter,test_iter):  
+    """Get the accuracy for the specific network"""
+    train_acc = evaluate_accuracy(net,train_iter)
+    test_acc = evaluate_accuracy(net,test_iter)
+    print(f'Train acc:\t{train_acc:.5f}')
+    print(f'Test  acc:\t{test_acc:.5f}')
+    return train_acc, test_acc
 
 
 class Accumulator:  
@@ -330,7 +351,11 @@ def train_epoch_ch3(net, train_iter, loss, updater):  #@save
 
 def init_weights(m):
     if type(m) == nn.Linear:
-        nn.init.normal_(m.weight, std=0.01)
+        nn.init.xavier_uniform_(m.weight)
+        nn.init.constant_(m.bias, 0.)
+    if type(m) == nn.Conv2d:
+        nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain('relu'))
+        nn.init.constant_(m.bias, 0.)
 
 
 
@@ -344,3 +369,40 @@ def predict_ch3(net, test_iter, n=6):
     titles = [true + '\n' + pred for true, pred in zip(trues, preds)]
     d2l.show_images(d2l.reshape(X[0:n], (n, 28, 28)), 1, n,
                     titles=titles[0:n])
+
+
+def evaluate_loss(net, data_iter, loss):  #@save
+    """Evaluate the loss of a model on the given dataset."""
+    metric = d2l.Accumulator(2)  # Sum of losses, no. of examples
+    for X, y in data_iter:
+        out = net(X)
+        y = y.reshape(out.shape)
+        l = loss(out, y)
+        metric.add(l.sum(), l.numel())
+    return metric[0] / metric[1]
+
+
+
+
+@torch.no_grad()
+def print_accuracy(net, trian_iter, test_iter):  
+    """Compute the accuracy for a model on a dataset."""
+    from tqdm.auto import tqdm
+    net = net.to(d)
+    def getAcc(data_iter):
+        metric = Accumulator(2)  # No. of correct predictions, no. of predictions
+        for X, y in data_iter:
+            X, y =X.to(d), y.to(d)
+            metric.add(accuracy(net(X), y), y.numel())
+        # for X, y in tqdm(data_iter):
+        #     X, y =X.to(d), y.to(d)
+        #     metric.add(accuracy(net(X), y), y.numel())
+        return metric[0] / metric[1]
+    net.to(d)
+    train_acc = getAcc(trian_iter) 
+    test_acc = getAcc(test_iter)
+    print(f'Train Acc:\t{train_acc:.4f}')
+    print(f'Test Acc:\t{test_acc:.4f}')
+    return train_acc, test_acc
+    
+
