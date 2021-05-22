@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 find . -size +1M
 find . -size +1M | cat >> .gitignore
 git status
