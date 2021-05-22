@@ -1,4 +1,9 @@
 #!/bin/bash
+mypath=`realpath $0`
+cd `dirname $mypath`
+pwd
+pwd
+1/0
 find . -size +1M
 find . -size +1M | cat >> .gitignore
 git status
