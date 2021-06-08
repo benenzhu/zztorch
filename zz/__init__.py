@@ -2,6 +2,8 @@
 # experiment = Experiment("fmngQK5ROchTbZokQQRn4QIHl", project_name="godTong")
 import torch
 from zz.gpumanageTorch import GPUManager
+from torchvision import datasets
+import torchvision.transforms as transforms
 from zz.torchsummary import summary,seed_everything
 import matplotlib.pyplot as plt
 from zz.mnist import *
@@ -391,7 +393,7 @@ def print_accuracy(net, trian_iter, test_iter):
     net = net.to(d)
     def getAcc(data_iter):
         metric = Accumulator(2)  # No. of correct predictions, no. of predictions
-        for X, y in data_iter:
+        for X, y in tqdm(data_iter):
             X, y =X.to(d), y.to(d)
             metric.add(accuracy(net(X), y), y.numel())
         # for X, y in tqdm(data_iter):
@@ -406,3 +408,20 @@ def print_accuracy(net, trian_iter, test_iter):
     return train_acc, test_acc
     
 
+############ datasets
+def load_celeba(batch_size = 64):
+    transform_train = transforms.Compose([
+        transforms.Resize((128,128)),
+        transforms.ToTensor(),
+    ])
+    data_path = '/private/data/face'
+    dataset_dir_train = os.path.join(data_path,"train")
+    data_train = datasets.ImageFolder(dataset_dir_train, transform=transform_train)
+    data_train_loader = DataLoader(data_train, batch_size=batch_size, shuffle=True, num_workers=4)
+    dataset_dir_test = os.path.join(data_path, 'test')
+    data_test = datasets.ImageFolder(dataset_dir_test, transform=transform_train)
+    data_test_loader = DataLoader(data_test, batch_size=batch_size,shuffle=False)
+    return data_train_loader, data_test_loader
+def save_image(inputs_tensor,path,nrow=10):
+    import torchvision.utils as vutils
+    vutils.save_image(inputs_tensor.cpu(), path,normalize=True, scale_each=True, nrow=nrow)

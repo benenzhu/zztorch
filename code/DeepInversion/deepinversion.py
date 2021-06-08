@@ -1,17 +1,3 @@
-# --------------------------------------------------------
-# Copyright (C) 2020 NVIDIA Corporation. All rights reserved.
-# Nvidia Source Code License-NC
-# Official PyTorch implementation of CVPR2020 paper
-# Dreaming to Distill: Data-free Knowledge Transfer via DeepInversion
-# Hongxu Yin, Pavlo Molchanov, Zhizhong Li, Jose M. Alvarez, Arun Mallya, Derek
-# Hoiem, Niraj K. Jha, and Jan Kautz
-# --------------------------------------------------------
-
-from __future__ import division, print_function
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -63,6 +49,8 @@ def get_image_prior_losses(inputs_jit):
     loss_var_l1 = (diff1.abs() / 255.0).mean() + (diff2.abs() / 255.0).mean() + (
             diff3.abs() / 255.0).mean() + (diff4.abs() / 255.0).mean()
     loss_var_l1 = loss_var_l1 * 255.0
+
+    assert loss_var_l1 == diff1.abs().mean() + diff2.abs().mean() + diff3.abs().mean() + diff4.abs().mean()
     return loss_var_l1, loss_var_l2
 
 

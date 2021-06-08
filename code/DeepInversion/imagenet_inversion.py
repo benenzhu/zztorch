@@ -1,17 +1,3 @@
-# --------------------------------------------------------
-# Copyright (C) 2020 NVIDIA Corporation. All rights reserved.
-# Nvidia Source Code License-NC
-# Official PyTorch implementation of CVPR2020 paper
-# Dreaming to Distill: Data-free Knowledge Transfer via DeepInversion
-# Hongxu Yin, Pavlo Molchanov, Zhizhong Li, Jose M. Alvarez, Arun Mallya, Derek
-# Hoiem, Niraj K. Jha, and Jan Kautz
-# --------------------------------------------------------
-
-from __future__ import division, print_function
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
-
 import argparse
 import torch
 from torch import distributed, nn
@@ -19,12 +5,9 @@ import random
 import torch.nn as nn
 import torch.nn.parallel
 import torch.utils.data
-from torchvision import datasets, transforms
-
-import numpy as np
-from apex import amp
-import os
 import torchvision.models as models
+
+from apex import amp
 from utils.utils import load_model_pytorch, distributed_is_initialized
 
 random.seed(0)
@@ -179,23 +162,23 @@ def main():
     parser.add_argument('-s', '--worldsize', type=int, default=1, help='Number of processes participating in the job.')
     parser.add_argument('--local_rank', '--rank', type=int, default=0, help='Rank of the current process.')
     parser.add_argument('--adi_scale', type=float, default=0.0, help='Coefficient for Adaptive Deep Inversion')
-    parser.add_argument('--no-cuda', action='store_true')
+    # parser.add_argument('--no-cuda', action='store_true')
 
-    parser.add_argument('--epochs', default=20000, type=int, help='batch size')
-    parser.add_argument('--setting_id', default=0, type=int, help='settings for optimization: 0 - multi resolution, 1 - 2k iterations, 2 - 20k iterations')
-    parser.add_argument('--bs', default=64, type=int, help='batch size')
+    # parser.add_argument('--epochs', default=20000, type=int, help='batch size')
+    parser.add_argument('--setting_id', default=2, type=int, help='settings for optimization: 0 - multi resolution, 1 - 2k iterations, 2 - 20k iterations')
+    parser.add_argument('--bs', default=42, type=int, help='batch size')
     parser.add_argument('--jitter', default=30, type=int, help='batch size')
-    parser.add_argument('--comment', default='', type=str, help='batch size')
+    # parser.add_argument('--comment', default='', type=str, help='batch size')
     parser.add_argument('--arch_name', default='resnet50', type=str, help='model name from torchvision or resnet50v15')
 
     parser.add_argument('--fp16', action='store_true', help='use FP16 for optimization')
     parser.add_argument('--exp_name', type=str, default='test', help='where to store experimental data')
 
-    parser.add_argument('--verifier', action='store_true', help='evaluate batch with another model')
+    parser.add_argument('--verifier', action='store_false', help='evaluate batch with another model')
     parser.add_argument('--verifier_arch', type=str, default='mobilenet_v2', help = "arch name from torchvision models to act as a verifier")
 
-    parser.add_argument('--do_flip', action='store_true', help='apply flip during model inversion')
-    parser.add_argument('--random_label', action='store_true', help='generate random label for optimization')
+    parser.add_argument('--do_flip', action='store_false', help='apply flip during model inversion')
+    parser.add_argument('--random_label', action='store_false', help='generate random label for optimization')
     parser.add_argument('--r_feature', type=float, default=0.05, help='coefficient for feature distribution regularization')
     parser.add_argument('--first_bn_multiplier', type=float, default=10., help='additional multiplier on first bn layer of R_feature')
     parser.add_argument('--tv_l1', type=float, default=0.0, help='coefficient for total variation L1 loss')
