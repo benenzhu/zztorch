@@ -50,7 +50,7 @@ def get_image_prior_losses(inputs_jit):
             diff3.abs() / 255.0).mean() + (diff4.abs() / 255.0).mean()
     loss_var_l1 = loss_var_l1 * 255.0
 
-    assert loss_var_l1 == diff1.abs().mean() + diff2.abs().mean() + diff3.abs().mean() + diff4.abs().mean()
+    # assert loss_var_l1 == diff1.abs().mean() + diff2.abs().mean() + diff3.abs().mean() + diff4.abs().mean()
     return loss_var_l1, loss_var_l2
 
 
@@ -179,7 +179,7 @@ class DeepInversionClass(object):
         # setup target labels
         if targets is None:
             #only works for classification now, for other tasks need to provide target vector
-            targets = torch.LongTensor([random.randint(0, 999) for _ in range(self.bs)]).to('cuda')
+            targets = torch.LongTensor([random.randint(0, 499) for _ in range(self.bs)]).to('cuda')
             if not self.random_label:
                 # preselected classes, good for ResNet50v1.5
                 targets = [1, 933, 946, 980, 25, 63, 92, 94, 107, 985, 151, 154, 207, 250, 270, 277, 283, 292, 294, 309,
@@ -225,8 +225,8 @@ class DeepInversionClass(object):
                 do_clip = True
             elif self.setting_id == 2:
                 #20k normal resolution the closes to the paper experiments for ResNet50
-                optimizer = optim.Adam([inputs], lr=self.lr, betas=[0.9, 0.999], eps = 1e-8)
-                do_clip = False
+                optimizer = optim.Adam([inputs], lr=self.lr, betas=[0.5, 0.9], eps = 1e-8)
+                do_clip = True
 
             if use_fp16:
                 static_loss_scale = 256

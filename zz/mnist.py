@@ -1,4 +1,5 @@
 import zz
+from zz import *
 from d2l.torch import predict_ch3
 from IPython import display
 import math
@@ -13,6 +14,11 @@ import os
 device = 'cuda'
 d = 'cuda'
 
+def g(*varr):
+    gpuvar = list()
+    for i in range(len(varr)):
+        gpuvar.append(varr[i].to('cuda'))
+    return gpuvar
 
 def get_mnist(batch_size, shuffle=False,fast=True):
     if not fast:

@@ -44,6 +44,27 @@ except ImportError:
 debug_output = False
 debug_output = True
 
+class CNN(nn.Module):
+    def __init__(self):
+        super(CNN, self).__init__()
+        self.l1 = nn.Sequential(
+            nn.Conv2d(3,32,5,padding=2), 
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32,32,5), 
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Flatten(),
+            nn.Linear(1152,128),
+            nn.Tanh(),
+            nn.Linear(128,10)
+        )
+    def forward(self, image):
+        return self.l1(image)
+
+
 
 class DeepInversionFeatureHook():
     '''
@@ -264,7 +285,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='PyTorch CIFAR10 DeepInversion')
     parser.add_argument('--bs', default=256, type=int, help='batch size')
-    parser.add_argument('--iters_mi', default=2000, type=int, help='number of iterations for model inversion')
+    parser.add_argument('--iters_mi', default=20000, type=int, help='number of iterations for model inversion')
     parser.add_argument('--cig_scale', default=0.0, type=float, help='competition score')
     parser.add_argument('--di_lr', default=0.1, type=float, help='lr for deep inversion')
     parser.add_argument('--di_var_scale', default=2.5e-5, type=float, help='TV L2 regularization coefficient')
@@ -278,7 +299,7 @@ if __name__ == "__main__":
 
     print("loading resnet34")
 
-    net_teacher = ResNet34()
+    net_teacher = torch.load('../zz.pth')
     net_student = ResNet18()
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -303,8 +324,8 @@ if __name__ == "__main__":
             opt_level=opt_level,
             loss_scale=loss_scale)
 
-    checkpoint = torch.load(args.teacher_weights)
-    net_teacher.load_state_dict(checkpoint)
+    # checkpoint = torch.load(args.teacher_weights)
+    # net_teacher.load_state_dict(checkpoint)
     net_teacher.eval() #important, otherwise generated images will be non natural
     if args.amp:
         # need to do this trick for FP16 support of batchnorms

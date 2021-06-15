@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.parallel
 import torch.utils.data
 import torchvision.models as models
+import iresnet
 
 from apex import amp
 from utils.utils import load_model_pytorch, distributed_is_initialized
@@ -61,7 +62,8 @@ def run(args):
     if args.arch_name=="resnet50v15":
         path_to_model = "./models/resnet50v15/model_best.pth.tar"
         load_model_pytorch(net, path_to_model, gpu_n=torch.cuda.current_device())
-
+    net = iresnet.iresnet50()
+    net.load_state_dict(torch.load('backbone.pth'))
     net.to(device)
     net.eval()
 
@@ -105,12 +107,12 @@ def run(args):
     args.start_noise = True
     # args.detach_student = False
 
-    args.resolution = 224
+    args.resolution = 112
     bs = args.bs
     jitter = 30
 
     parameters = dict()
-    parameters["resolution"] = 224
+    parameters["resolution"] = 112
     parameters["random_label"] = False
     parameters["start_noise"] = True
     parameters["detach_student"] = False
@@ -162,7 +164,7 @@ def main():
     parser.add_argument('-s', '--worldsize', type=int, default=1, help='Number of processes participating in the job.')
     parser.add_argument('--local_rank', '--rank', type=int, default=0, help='Rank of the current process.')
     parser.add_argument('--adi_scale', type=float, default=0.0, help='Coefficient for Adaptive Deep Inversion')
-    # parser.add_argument('--no-cuda', action='store_true')
+    parser.add_argument('--no-cuda', action='store_true')
 
     # parser.add_argument('--epochs', default=20000, type=int, help='batch size')
     parser.add_argument('--setting_id', default=2, type=int, help='settings for optimization: 0 - multi resolution, 1 - 2k iterations, 2 - 20k iterations')
@@ -172,17 +174,17 @@ def main():
     parser.add_argument('--arch_name', default='resnet50', type=str, help='model name from torchvision or resnet50v15')
 
     parser.add_argument('--fp16', action='store_true', help='use FP16 for optimization')
-    parser.add_argument('--exp_name', type=str, default='test', help='where to store experimental data')
+    parser.add_argument('--exp_name', type=str, default='test11', help='where to store experimental data')
 
-    parser.add_argument('--verifier', action='store_false', help='evaluate batch with another model')
+    parser.add_argument('--verifier',default=False, action='store_false', help='evaluate batch with another model')
     parser.add_argument('--verifier_arch', type=str, default='mobilenet_v2', help = "arch name from torchvision models to act as a verifier")
 
     parser.add_argument('--do_flip', action='store_false', help='apply flip during model inversion')
-    parser.add_argument('--random_label', action='store_false', help='generate random label for optimization')
+    parser.add_argument('--random_label',default=True,action='store_true', help='generate random label for optimization')
     parser.add_argument('--r_feature', type=float, default=0.05, help='coefficient for feature distribution regularization')
     parser.add_argument('--first_bn_multiplier', type=float, default=10., help='additional multiplier on first bn layer of R_feature')
-    parser.add_argument('--tv_l1', type=float, default=0.0, help='coefficient for total variation L1 loss')
-    parser.add_argument('--tv_l2', type=float, default=0.0001, help='coefficient for total variation L2 loss')
+    parser.add_argument('--tv_l1', type=float, default=0.1, help='coefficient for total variation L1 loss')
+    parser.add_argument('--tv_l2', type=float, default=0.01, help='coefficient for total variation L2 loss')
     parser.add_argument('--lr', type=float, default=0.2, help='learning rate for optimization')
     parser.add_argument('--l2', type=float, default=0.00001, help='l2 loss on the image')
     parser.add_argument('--main_loss_multiplier', type=float, default=1.0, help='coefficient for the main loss in optimization')
