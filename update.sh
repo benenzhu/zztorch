@@ -6,8 +6,8 @@ pwd
 1/0
 find . -size +1M
 find . -size +1M | cat >> .gitignore
-git status
 git rm -r --cached .
+git status
 read -r -p 'are you sure?' INPUT
 git add .
 git commit -m $INPUT 
