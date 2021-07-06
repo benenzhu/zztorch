@@ -27,8 +27,17 @@ def inference(weight, name, img):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='PyTorch ArcFace Training')
-    parser.add_argument('--network', type=str, default='r50', help='backbone network')
-    parser.add_argument('--weight', type=str, default='')
+    parser.add_argument('--network', type=str, default='r100', help='backbone network')
+    parser.add_argument('--weight', type=str, default='backbone.pth')
     parser.add_argument('--img', type=str, default=None)
     args = parser.parse_args()
     inference(args.weight, args.network, args.img)
+
+
+	img = torch.from_numpy(img).unsqueeze(0).float()
+	img.div_(255).sub_(0.5).div_(0.5)
+	net = get_model('r100',fp16=False)
+	net.load_state_dict(torch.load('backbone.pth'))
+	net.eval()
+	emb = net(img).numpy()
+	emb
