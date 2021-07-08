@@ -111,17 +111,19 @@ best_loss = 1e4
 
 # + tags=[]
 stat = [[],[],[],[],[]]
-emb_file ='save/multi.pt' #'save/emb_1.pt' # 'save/emb_average.pt'
-# emb_file ='save/js.pt' #'save/emb_1.pt' # 'save/emb_average.pt'
+emb_file ='save/js.pt' #'save/emb_1.pt' # 'save/emb_average.pt'
 # emb_target = torch.load(emb_file).cuda()
+# emb_target = emb_target.expand(bs,-1).cuda()
+
+emb_file ='save/multi.pt' #'save/emb_1.pt' # 'save/emb_average.pt'
 origin,emb_target = [i.cuda() for i in torch.load(emb_file)]
 emb_target = torch.cat([emb_target,emb_target,emb_target,emb_target])
-# emb_target = emb_target.expand(bs,-1).cuda()
 #####################
-lr = 0.25 #0.25
-jitter = 3
+lr = 1 #0.25
+lr = 0.05 #0.25
+jitter = 5
 epochs = 2000
-c_cos,c_norm,c_bn,c_l2var = 2,0.002,0.005,0.001
+c_cos,c_norm,c_bn,c_l2var,c_l2 = 2,0.000,0.000,0.001,0.0001
 flip_prob = 0.5
 bn_first_scale = 10
 bn_latter_scale = 0 ### not implemented
@@ -134,7 +136,8 @@ if not start_noise:inpu = torch.zeros((bs,3,image_resolution,image_resolution),r
 else:inpu = torch.randn((bs,3,image_resolution,image_resolution),requires_grad=True,device='cuda',dtype=torch.float)
 # optimizer = optim.Adam([inputs],lr=lr,betas=[0.5,0.9],eps=1e-8)
 optimizer = optim.Adam([inpu], lr=lr, betas=(0.9,0.999), eps = 1e-8)
-lr_scheduler = lr_cosine_policy(lr,100,epochs)
+# optimizer = optim.SGD([inpu], lr)
+lr_scheduler = lr_cosine_policy(lr,10,epochs)
 for epoch in range(epochs):
     lr_scheduler(optimizer, epoch,epoch)
     if epoch/epochs<0.5:
@@ -156,14 +159,16 @@ for epoch in range(epochs):
     rescale = [bn_first_scale] + [1. for _ in range(len(r_feature_layers) - 1)]
     r_feature_loss = torch.stack([mod.r_feature * rescale[idx] for (idx,mod) in enumerate(r_feature_layers)]).sum(dim=0)
 #     print(cos_loss.shape,norm_loss.shape,r_feature_loss.shape,var_l2_loss.shape)
-#     l2_loss = torch.norm(inputs.view(bs,-1),dim=1).mean()
+    l2_loss = torch.norm(inputs.view(bs,-1)+1,dim=1)
     
     loss =  -cos_loss * c_cos + \
                 norm_loss * c_norm + \
                 r_feature_loss * c_bn + \
-            var_l2_loss * c_l2var
+            var_l2_loss * c_l2var + \
+            l2_loss * c_l2
     
     loss.backward(torch.ones(bs).cuda())
+    print(inpu.grad.max()*255/2,inpu.grad.min()*255/2)
     optimizer.step()
     with torch.no_grad():
         stat[0].append(cos_loss.sum().item())
@@ -185,7 +190,7 @@ for epoch in range(epochs):
         display(showIm(filename=f'img/{epoch:04d}.png'))
 # -
 
-torch.
+torch.norm(inpu.reshape(bs,-1)-1)
 
 l = []
 for i in range(5):
